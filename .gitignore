@@ -1,4 +1,5 @@
 *.sw*
-hashmap_c_test
+hashmapc_test
 *.dSYM
 build/
+libhashmapc.a

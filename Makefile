@@ -1,5 +1,5 @@
 CC := gcc
-TESTOUT := hashmap_c_test
+TESTOUT := hashmapc_test
 
 SRC := src
 INCL := include
@@ -16,7 +16,12 @@ DEPS := \
 
 .PHONY: all clean test
 
-all: mkbuilddir $(DEPS)
+all: mkbuilddir $(DEPS) test
+	@mkdir -p $(BUILD)
+
+lib: $(DEPS)
+	@mkdir -p $(BUILD)
+	ar rcs $(BUILD)/libhashmapc.a $^
 
 mkbuilddir:
 	@mkdir -p $(BUILD)
