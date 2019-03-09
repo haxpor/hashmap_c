@@ -1,0 +1,4 @@
+*.sw*
+hashmap_c_test
+*.dSYM
+build/
