@@ -78,4 +78,20 @@ extern void hashmapc_insert(hashmapc* h, const char* key, void* val);
 ///
 extern const void* hashmapc_get(hashmapc* h, const char* key);
 
+///
+/// Delete item frm `key`.
+///
+/// \param h hashmap
+/// \param key key associated with item which will be delete
+///
+extern void hashmapc_delete(hashmapc* h, const char* key);
+
+///
+/// Clear hashmap.
+/// This will remove all items in hashmap.
+///
+/// \param h hashmap
+///
+extern void hashmapc_clear(hashmapc* h);
+
 #endif

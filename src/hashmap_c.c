@@ -318,7 +318,7 @@ const void* hashmapc_get(hashmapc* h, const char* key)
   MurmurHash3_x86_32(key, key_len, h->seed, &out);
   unsigned int index = out & (h->msize - 1);
 
-  // get element as hashed index
+  // get element from hashed index
   hashmapc_element* el_ptr = h->mem + index;
   // check if hashed index has element with key we aim for
   if (el_ptr->is_set == 1)
@@ -336,9 +336,9 @@ const void* hashmapc_get(hashmapc* h, const char* key)
   {
     int ii = (i + index) % h->msize;
     hashmapc_element* el_ptr = h->mem + ii;   
-    if (strncmp(el_ptr->key, key, strlen(key)) == 0)
+    if (el_ptr->is_set == 1 && strncmp(el_ptr->key, key, strlen(key)) == 0)
     {
-#ifndef HASHMAPC_DEBUG
+#ifdef HASHMAPC_DEBUG
       printf("[GET] Linear searching and found\n");
 #endif
       return (const void*)el_ptr->val;
@@ -346,4 +346,89 @@ const void* hashmapc_get(hashmapc* h, const char* key)
   }
 
   return NULL;
+}
+
+void hashmapc_delete(hashmapc* h, const char* key)
+{
+  // hold output from hashing
+  uint32_t out;
+  // only support up to KEY_SIZE from key
+  size_t key_len = strlen(key) > KEY_SIZE ? KEY_SIZE : strlen(key);
+  // hash to get index
+  MurmurHash3_x86_32(key, key_len, h->seed, &out);
+  unsigned int index = out & (h->msize - 1);
+
+  // get element from hashed index
+  hashmapc_element* el_ptr = h->mem + index;
+  // found if it's set, then we remove it
+  if (el_ptr->is_set == 1)
+  {
+    if (strncmp(el_ptr->key, key, strlen(key)) == 0)
+    {
+      // clear memory space for this item
+      memset(el_ptr->key, 0, KEY_SIZE);
+      // no need to consider what datatype it is
+      // we just clear memory space to all 0
+      memset(el_ptr->val, 0, h->stride);
+      // reset is_set flag
+      el_ptr->is_set = 0;
+
+      // update current size
+      h->size--;
+
+#ifdef HASHMAPC_DEBUG
+      printf("[DELETE] removed item at index %d\n", index);
+#endif
+    }
+  }
+  // linearly find the target
+  else
+  {
+    for (int i=1; i<h->msize; ++i)
+    {
+      int ii = (i + index) % h->msize;
+      hashmapc_element* el_ptr = h->mem + ii;   
+      if (el_ptr->is_set == 1 && strncmp(el_ptr->key, key, strlen(key)) == 0)
+      {
+        // clear memory space for this item
+        memset(el_ptr->key, 0, KEY_SIZE);
+        // no need to consider what datatype it is
+        // we just clear memory space to all 0
+        memset(el_ptr->val, 0, h->stride);
+        // reset is_set flag
+        el_ptr->is_set = 0;
+
+        // update current size
+        h->size--;
+#ifdef HASHMAPC_DEBUG
+        printf("[DELETE] Linear searching to delete (loops %d)\n", i);
+#endif
+        return;
+      }
+    }
+#ifdef HASHMAPC_DEBUG
+    printf("[DELETE] cannot find item (loops %d)\n", h->msize-1);
+#endif
+  }
+}
+
+void hashmapc_clear(hashmapc* h)
+{
+  for (int i=0; i<h->msize; ++i)
+  {
+    hashmapc_element* el_ptr = h->mem + i;
+    if (el_ptr->is_set == 1)
+    {
+      // clear memory space for this item
+      memset(el_ptr->key, 0, KEY_SIZE);
+      // no need to consider what datatype it is
+      // we just clear memory space to all 0
+      memset(el_ptr->val, 0, h->stride);
+      // reset is_set flag
+      el_ptr->is_set = 0;
+
+      // update current size
+      h->size--;
+    }
+  } 
 }
