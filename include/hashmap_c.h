@@ -37,6 +37,9 @@ typedef struct
   /// size in bytes for individual value element
   unsigned int stride;
 
+  /// read-only
+  /// internally managed, for seed value used in hashing function
+  unsigned int seed;
 } hashmapc;
 
 ///

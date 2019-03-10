@@ -25,6 +25,10 @@
 /// this size included null-terminated character
 #define KEY_SIZE 32
 
+/// number of time to keep searching for new element if hashed index is not empty
+/// to add a new item into
+#define MAX_PROBE_LENGTH 8
+
 ///
 /// init default
 ///
@@ -56,6 +60,10 @@ void init_defaults(hashmapc* h, unsigned int stride)
   h->stride = stride;
   h->size = 0;
   h->msize = INITIAL_ALLOC;
+
+  // set seed to random, we gonna set seed for hashmap
+  srand(time(NULL));
+  h->seed = rand() % (uint32_t)(pow(2,32) - 1);
 
   // allocate memory for its element wrapper, and actual backing memory space
   h->mem = malloc(sizeof(hashmapc_element) * INITIAL_ALLOC);
@@ -137,10 +145,7 @@ void erehash(hashmapc* h)
       // otherwise, we need to iterate to find an empty slot to set via linear probing
       else
       {
-#ifdef HASHMAPC_DEBUG
-        printf("[REHASH] collision found\n");
-#endif
-        for (int i=1; i<new_size-1; ++i)
+        for (int i=1; i<=MAX_PROBE_LENGTH; ++i)
         {
           int ii = (i + hindex) % new_size;
 
@@ -205,8 +210,6 @@ void free_mem(hashmapc* h)
 
 hashmapc* hashmapc_new(unsigned int stride)
 {
-  // use random when we need to do hashing
-  srand(time(NULL));
 
   hashmapc* out = malloc(sizeof(hashmapc));
 
@@ -285,10 +288,7 @@ void hashmapc_insert(hashmapc* h, const char* key, void* val)
     // otherwise, we need to iterate to find an empty slot to set via linear probing
     else
     {
-#ifdef HASHMAPC_DEBUG
-      printf("[INSERT] collision found\n");
-#endif
-      for (int i=1; i<h->msize-1; ++i)
+      for (int i=1; i<=MAX_PROBE_LENGTH; ++i)
       {
         int ii = (i + index) % h->msize;
         hashmapc_element* elem_ptr = h->mem + ii;
