@@ -20,6 +20,9 @@
 		printf("-not found %s\n", #key);	\
 	}
 
+#define HM_DEL(h, key)	\
+	hashmapc_delete(h, key);
+
 typedef struct
 {
 	float ft_val;
@@ -88,6 +91,18 @@ int main (int argc, char** argv)
 	HM_GETL(hm, "key1000", vst);	// should not found
 	HM_GETL(hm, "key16", vst);
 	HM_GETL(hm, "key9", vst);
+
+	HM_DEL(hm, "key9")
+	HM_DEL(hm, "key4")
+	HM_DEL(hm, "key1000")
+	HM_DEL(hm, "key1")
+	PRINT_INFO(hm)
+
+	hashmapc_clear(hm);
+	PRINT_INFO(hm)
+
+	HM_INSERT(hm, "key1", v, 1.0f, 1)
+	PRINT_INFO(hm)
 
 	hashmapc_free(hm);
 	hm = NULL;
