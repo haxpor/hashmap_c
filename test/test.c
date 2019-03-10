@@ -8,11 +8,11 @@
 	v.int_val = v_attr2;	\
 	hashmapc_insert(h, key, &v);
 
-#define HM_GETL(h, key, el_ptr)	\
-	el_ptr = hashmapc_get(hm, key);	\
-	if (el_ptr != NULL)	\
+#define HM_GETL(h, key, vst_ptr)	\
+	vst_ptr = hashmapc_get(hm, key);	\
+	if (vst_ptr != NULL)	\
 	{	\
-		valst v = *(valst*)el_ptr;	\
+		valst v = *(valst*)vst_ptr;	\
 		printf("-found %s with struct value .ft_val=%f, .int_val=%d\n", #key, v.ft_val, v.int_val);	\
 	}	\
 	else	\
@@ -83,11 +83,11 @@ int main (int argc, char** argv)
 	HM_INSERT(hm, "key16", v, 16.0f, 16)
 	PRINT_INFO(hm)
 
-	const hashmapc_element* el = NULL;
-	HM_GETL(hm, "key10", el)
-	HM_GETL(hm, "key1000", el);	// should not found
-	HM_GETL(hm, "key16", el);
-	HM_GETL(hm, "key9", el);
+	const valst* vst = NULL;
+	HM_GETL(hm, "key10", vst)
+	HM_GETL(hm, "key1000", vst);	// should not found
+	HM_GETL(hm, "key16", vst);
+	HM_GETL(hm, "key9", vst);
 
 	hashmapc_free(hm);
 	hm = NULL;
