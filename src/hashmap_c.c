@@ -158,15 +158,16 @@ void erehash(hashmapc* h)
 
           if (newel_ptr->is_set == 0)
           {
-#ifdef HASHMAPC_DEBUG
-          printf("[REHASH] found hash index %d\n", ii);
-#endif
             // deep copy from old value into new one
             memcpy(newel_ptr->val, oldel_ptr->val, h->stride);
             // mark as set for this element
             newel_ptr->is_set = 1;
             // deep copy of old key into new one
             strncpy(newel_ptr->key, oldel_ptr->key, KEY_SIZE);
+
+#ifdef HASHMAPC_DEBUG
+            printf("[REHASH] collision found (new index %d)\n", ii);
+#endif
             break;
           }
         }
@@ -299,6 +300,9 @@ void hashmapc_insert(hashmapc* h, const char* key, void* val)
           // copy key to element's key (remainder of destination string will be filled with '\0'
           strncpy(elem_ptr->key, key, key_len);
 
+#ifdef HASHMAPC_DEBUG
+          printf("[INSERT] collision found (new index %d)\n", ii);
+#endif
           // update hashmap's size
           h->size++;
           break;
