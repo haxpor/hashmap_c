@@ -2,10 +2,23 @@
 #include "hashmap_c.h"
 
 #define PRINT_INFO(h) print_info(h);
+
 #define HM_INSERT(h, key, v, v_attr1, v_attr2)	\
 	v.ft_val = v_attr1;	\
 	v.int_val = v_attr2;	\
 	hashmapc_insert(h, key, &v);
+
+#define HM_GETL(h, key, el_ptr)	\
+	el_ptr = hashmapc_get(hm, key);	\
+	if (el_ptr != NULL)	\
+	{	\
+		valst v = *(valst*)el_ptr;	\
+		printf("-found %s with struct value .ft_val=%f, .int_val=%d\n", #key, v.ft_val, v.int_val);	\
+	}	\
+	else	\
+	{	\
+		printf("-not found %s\n", #key);	\
+	}
 
 typedef struct
 {
@@ -69,6 +82,12 @@ int main (int argc, char** argv)
 	PRINT_INFO(hm)
 	HM_INSERT(hm, "key16", v, 16.0f, 16)
 	PRINT_INFO(hm)
+
+	const hashmapc_element* el = NULL;
+	HM_GETL(hm, "key10", el)
+	HM_GETL(hm, "key1000", el);
+	HM_GETL(hm, "key16", el);
+	HM_GETL(hm, "key9", el);
 
 	hashmapc_free(hm);
 	hm = NULL;
