@@ -2,9 +2,7 @@
 #define HASHMAP_C_H_
 
 ///
-/// Implementation of always 1-1 mapping Hashmap with string as key.
-/// There's no bucket whatsover, just memory space
-/// that can hold all elements, but expand when necessary.
+/// Hashmap with string as key
 ///
 
 typedef struct
