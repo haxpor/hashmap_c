@@ -18,6 +18,10 @@
 
 /// number of available buckets initially allocated
 /// similarly as commented on top of LOAD_FACTOR
+/// lower initial capacity leads to higher chance of collision
+/// although at 16 it has somewhat high chance still, but to keep memory low at first,
+/// and if the game has more key to be added, this chance is gradually lower.
+/// From testing, 256 gives the best result with no collision at initial time of using.
 #define INITIAL_ALLOC 16
 
 /// this should be aligned with what defined in header file
