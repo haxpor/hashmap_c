@@ -69,4 +69,13 @@ extern void hashmapc_free(hashmapc* h);
 ///
 extern void hashmapc_insert(hashmapc* h, const char* key, void* val);
 
+///
+/// Get value from specified `key` from the first found.
+///
+/// \param h hashmap
+/// \param key key to try to search and get associated value from
+/// \return opaque pointer to found value, otherwise if not found, then NULL will be returned.
+///
+extern const void* hashmapc_get(hashmapc* h, const char* key);
+
 #endif

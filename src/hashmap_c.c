@@ -311,3 +311,43 @@ void hashmapc_insert(hashmapc* h, const char* key, void* val)
     }
   }
 }
+
+const void* hashmapc_get(hashmapc* h, const char* key)
+{
+  // hold output from hashing
+  uint32_t out;
+  // only support up to KEY_SIZE from key
+  size_t key_len = strlen(key) > KEY_SIZE ? KEY_SIZE : strlen(key);
+  // hash to get index
+  MurmurHash3_x86_32(key, key_len, h->seed, &out);
+  unsigned int index = out & (h->msize - 1);
+
+  // get element as hashed index
+  hashmapc_element* el_ptr = h->mem + index;
+  // check if hashed index has element with key we aim for
+  if (el_ptr->is_set == 1)
+  {
+    // if found, return now
+    if (strncmp(el_ptr->key, key, strlen(key)) == 0)
+    {
+      return (const void*)el_ptr->val;
+    }
+  }
+
+  // linear finding
+  // there's chance that such element is saved in different index than hashed index
+  for (int i=1; i<=MAX_PROBE_LENGTH; ++i)
+  {
+    int ii = (i + index) % h->msize;
+    hashmapc_element* el_ptr = h->mem + ii;   
+    if (strncmp(el_ptr->key, key, strlen(key)) == 0)
+    {
+#ifndef HASHMAPC_DEBUG
+      printf("[GET] Linear searching and found\n");
+#endif
+      return (const void*)el_ptr->val;
+    }
+  }
+
+  return NULL;
+}
