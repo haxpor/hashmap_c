@@ -85,7 +85,7 @@ int main (int argc, char** argv)
 
 	const hashmapc_element* el = NULL;
 	HM_GETL(hm, "key10", el)
-	HM_GETL(hm, "key1000", el);
+	HM_GETL(hm, "key1000", el);	// should not found
 	HM_GETL(hm, "key16", el);
 	HM_GETL(hm, "key9", el);
 
