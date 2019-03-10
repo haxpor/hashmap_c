@@ -17,5 +17,7 @@ If you want to see more debugging log as spit out from hashmap itself, use `make
 
 It will expand by doubling memory space preparing for future addition of key-value item when the current number of key-value items reaches 75% of its capacity which is initially set to be 16.
 
+There's no mechanism to shrink down memory usage, so capacity will be double each time according to description above.
+
 # License
 MIT, Wasin Thonkaew
