@@ -29,10 +29,6 @@
 /// this size included null-terminated character
 #define KEY_SIZE 32
 
-/// number of time to keep searching for new element if hashed index is not empty
-/// to add a new item into
-#define MAX_PROBE_LENGTH 8
-
 ///
 /// init default
 ///
@@ -149,7 +145,7 @@ void erehash(hashmapc* h)
       // otherwise, we need to iterate to find an empty slot to set via linear probing
       else
       {
-        for (int i=1; i<=MAX_PROBE_LENGTH; ++i)
+        for (int i=1; i<new_size; ++i)
         {
           int ii = (i + hindex) % new_size;
 
@@ -166,7 +162,7 @@ void erehash(hashmapc* h)
             strncpy(newel_ptr->key, oldel_ptr->key, KEY_SIZE);
 
 #ifdef HASHMAPC_DEBUG
-            printf("[REHASH] collision found (new index %d)\n", ii);
+            printf("[REHASH] collision found (new index %d, loop %d)\n", ii, i);
 #endif
             break;
           }
@@ -287,7 +283,7 @@ void hashmapc_insert(hashmapc* h, const char* key, void* val)
     // otherwise, we need to iterate to find an empty slot to set via linear probing
     else
     {
-      for (int i=1; i<=MAX_PROBE_LENGTH; ++i)
+      for (int i=1; i<h->msize; ++i)
       {
         int ii = (i + index) % h->msize;
         hashmapc_element* elem_ptr = h->mem + ii;
@@ -301,7 +297,7 @@ void hashmapc_insert(hashmapc* h, const char* key, void* val)
           strncpy(elem_ptr->key, key, key_len);
 
 #ifdef HASHMAPC_DEBUG
-          printf("[INSERT] collision found (new index %d)\n", ii);
+          printf("[INSERT] collision found (new index %d, loop %d)\n", ii, i);
 #endif
           // update hashmap's size
           h->size++;
@@ -336,7 +332,7 @@ const void* hashmapc_get(hashmapc* h, const char* key)
 
   // linear finding
   // there's chance that such element is saved in different index than hashed index
-  for (int i=1; i<=MAX_PROBE_LENGTH; ++i)
+  for (int i=1; i<h->msize; ++i)
   {
     int ii = (i + index) % h->msize;
     hashmapc_element* el_ptr = h->mem + ii;   
