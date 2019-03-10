@@ -120,14 +120,14 @@ void erehash(hashmapc* h)
 
       // calculate new hash value for index to be put into new mem pointer
       // tehnical note about murmurhash3, see hashmapc_insert() function
-      uint64_t out[2];
+      uint32_t out;
       // cap key length to KEY_SIZE
       size_t key_len = strlen(oldel_ptr->key) > KEY_SIZE ? KEY_SIZE : strlen(oldel_ptr->key);
       // use length of null-terminated string as the size
-      MurmurHash3_x64_128(oldel_ptr->key, key_len, rand() % (uint32_t)(pow(2,32) - 1), out);
+      MurmurHash3_x86_32(oldel_ptr->key, key_len, h->seed, &out);
 
       // use new size of hashmap now for new element
-      unsigned int hindex = out[1] & (new_size - 1);
+      unsigned int hindex = out & (new_size - 1);
 
 #ifdef HASHMAPC_DEBUG
       printf("[REHASH] hash index: %d\n", hindex);
@@ -253,21 +253,15 @@ void hashmapc_insert(hashmapc* h, const char* key, void* val)
   if (h->size < h->msize)
   {
     // compute hash of input key
-    // note: choose x64_128 variant as the result shows it's the fastest to work with
-    // for large block of data.
+    // note: choose x86_32 variant as it's suitable for low latency hash table look up
     // see reference at https://github.com/aappleby/smhasher/wiki/MurmurHash3
-    // 
-    // possibly might be better for small block of data to work with MurmurHash2_x64_64 variant?
-    uint64_t out[2];
+    uint32_t out;
     // cap key length to KEY_SIZE
     size_t key_len = strlen(key) > KEY_SIZE ? KEY_SIZE : strlen(key);
     // use length of null-terminated string as the size
-    MurmurHash3_x64_128(key, key_len, rand() % (uint32_t)(pow(2,32) - 1), out);
+    MurmurHash3_x86_32(key, key_len, h->seed, &out);
 
-    // output stored by murmurhash3 as big-endian, thus we access the lower bits part at index 1
-    // mask with the current managed size of memory space to hold possible elements
-    // just need integer with same size of msize to hold the data
-    unsigned int index = out[1] & (h->msize - 1);
+    unsigned int index = out & (h->msize - 1);
 
 #ifdef HASHMAPC_DEBUG
     printf("[INSERT] hash index: %d\n", index);
