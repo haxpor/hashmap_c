@@ -1,6 +1,6 @@
 # hashmap_c
 
-Hashmap with [MurmurHash3](https://github.com/aappleby/smhasher) (specifically `MurmurHash3_x64_128` variant) as hahsing function in C implementation.
+Hashmap with [MurmurHash3](https://github.com/aappleby/smhasher) (specifically `MurmurHash3_x32_32` variant) as hashing function in C implementation which is suitable for low latency hash table lookup.
 
 # Build
 
