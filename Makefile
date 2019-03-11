@@ -17,7 +17,6 @@ DEPS := \
 .PHONY: all clean test
 
 all: mkbuilddir $(DEPS) test
-	@mkdir -p $(BUILD)
 
 lib: $(DEPS)
 	@mkdir -p $(BUILD)
