@@ -18,9 +18,9 @@ DEPS := \
 
 all: mkbuilddir $(DEPS) test
 
-lib: $(DEPS)
+lib: mkbuilddir $(DEPS)
 	@mkdir -p $(BUILD)
-	ar rcs $(BUILD)/libhashmapc.a $^
+	ar rcs $(BUILD)/libhashmapc.a $(DEPS)
 
 mkbuilddir:
 	@mkdir -p $(BUILD)
