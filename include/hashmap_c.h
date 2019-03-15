@@ -38,6 +38,10 @@ typedef struct
   /// read-only
   /// internally managed, for seed value used in hashing function
   unsigned int seed;
+
+  /// function pointer for freeing individual element when delete, or clear
+  /// from hashmap
+  void (*free_elem_func)(void* val);
 } hashmapc;
 
 ///
@@ -91,5 +95,15 @@ extern void hashmapc_delete(hashmapc* h, const char* key);
 /// \param h hashmap
 ///
 extern void hashmapc_clear(hashmapc* h);
+
+///
+/// Set function to free element when hashmap deletes or clears it.
+/// This function accepts NULL, thus set free element function to empty and hashmap won't call it when deleting or clearing.
+///
+/// \param h hashmap
+/// \param func function pointer with signature of void (*func)(void*) in which void* is the opaque pointer
+///             to the actual element's memory space.
+///
+extern void hashmapc_set_free_elem_func(hashmapc* h, void (*func)(void*));
 
 #endif

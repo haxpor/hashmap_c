@@ -55,6 +55,14 @@ static void erehash(hashmapc* h);
 ///
 static void free_mem(hashmapc* h);
 
+///
+/// free hashmap's memory without freeing elements' memory space
+/// use this especially when copying old elements' memory space to new hashmap after rehashing.
+///
+/// \param h input hashmap to free it's mem space without element's memory space
+///
+static void free_mem_except_elems(hashmapc* h);
+
 void init_defaults(hashmapc* h, unsigned int stride)
 {
   h->stride = stride;
@@ -170,9 +178,9 @@ void erehash(hashmapc* h)
       }
     }
 
-    // free old mem pointer
+    // free old mem pointer except elements' memory space
     // note: call this first before updating its new size
-    free_mem(h);
+    free_mem_except_elems(h);
 
     // update new msize
     h->msize = new_size;
@@ -196,7 +204,39 @@ void free_mem(hashmapc* h)
     {
       hashmapc_element* elem_ptr = h->mem + i;
 
-      free(elem_ptr->val);
+      // if need to call custom free element function as supplied by users
+      // mostly for heap space, not stack space
+      //
+      // also need to check if such pointer is not null, as we pre-allocate memory space for hashmapc_element
+      // but its `val` pointer might be NULL
+      if (h->free_elem_func != NULL && elem_ptr->val != NULL)
+      {
+        h->free_elem_func(elem_ptr->val);
+      }
+      elem_ptr->val = NULL;
+
+      elem_ptr->is_set = 0;
+      memset(elem_ptr->key, 0, KEY_SIZE);
+    }
+
+    // now free itself
+    free(h->mem);
+    h->mem = NULL;
+  }
+}
+
+void free_mem_except_elems(hashmapc* h)
+{
+  // free its memory space
+  if (h->mem != NULL)
+  {
+    // free its backing memory space first
+    for (int i=0; i<h->msize; ++i)
+    {
+      hashmapc_element* elem_ptr = h->mem + i;
+
+      // not free any memory space, just set it to NULL
+      // make sure we will do something about it later (be careful)
       elem_ptr->val = NULL;
 
       elem_ptr->is_set = 0;
@@ -367,9 +407,13 @@ void hashmapc_delete(hashmapc* h, const char* key)
     {
       // clear memory space for this item
       memset(el_ptr->key, 0, KEY_SIZE);
-      // no need to consider what datatype it is
-      // we just clear memory space to all 0
-      memset(el_ptr->val, 0, h->stride);
+      // if need to call custom free element function as supplied by users
+      // mostly for heap space, not stack space
+      if (h->free_elem_func != NULL)
+      {
+        h->free_elem_func(el_ptr->val);
+      }
+      el_ptr->val = NULL;
       // reset is_set flag
       el_ptr->is_set = 0;
 
@@ -392,9 +436,13 @@ void hashmapc_delete(hashmapc* h, const char* key)
       {
         // clear memory space for this item
         memset(el_ptr->key, 0, KEY_SIZE);
-        // no need to consider what datatype it is
-        // we just clear memory space to all 0
-        memset(el_ptr->val, 0, h->stride);
+        // if need to call custom free element function as supplied by users
+        // mostly for heap space, not stack space
+        if (h->free_elem_func != NULL)
+        {
+          h->free_elem_func(el_ptr->val);
+        }
+        el_ptr->val = NULL;
         // reset is_set flag
         el_ptr->is_set = 0;
 
@@ -421,9 +469,13 @@ void hashmapc_clear(hashmapc* h)
     {
       // clear memory space for this item
       memset(el_ptr->key, 0, KEY_SIZE);
-      // no need to consider what datatype it is
-      // we just clear memory space to all 0
-      memset(el_ptr->val, 0, h->stride);
+      // if need to call custom free element function as supplied by users
+      // mostly for heap space, not stack space
+      if (h->free_elem_func != NULL)
+      {
+        h->free_elem_func(el_ptr->val);
+      }
+      el_ptr->val = NULL;
       // reset is_set flag
       el_ptr->is_set = 0;
 
@@ -431,4 +483,9 @@ void hashmapc_clear(hashmapc* h)
       h->size--;
     }
   } 
+}
+
+void hashmapc_set_free_elem_func(hashmapc* h, void (*func)(void*))
+{
+  h->free_elem_func = func;
 }
