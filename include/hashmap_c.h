@@ -4,6 +4,13 @@
 ///
 /// Hashmap with string as key
 ///
+/// Its internal imeplementation will pre-allocate elements then insertion operation will
+/// just do a memory copy from source to destination, no more allocation except whenever
+/// it needs to expand its memory space.
+///
+/// Thus function pointer of custom freeing element's memory space `free_elem_func` must only
+/// free element's internal memory, not element itself as it's managed by hashmapc.
+///
 
 typedef struct
 {
@@ -41,6 +48,7 @@ typedef struct
 
   /// function pointer for freeing individual element when delete, or clear
   /// from hashmap
+	/// put logic code of freeing internal in this function, not element itself***
   void (*free_elem_func)(void* val);
 } hashmapc;
 

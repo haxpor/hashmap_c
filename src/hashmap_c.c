@@ -78,7 +78,7 @@ void init_defaults(hashmapc* h, unsigned int stride)
   for (int i=0; i<h->msize; ++i)
   {
     hashmapc_element* elem_ptr = h->mem + i;
-    elem_ptr->val = malloc(h->stride);
+    elem_ptr->val = calloc(1, h->stride);
 
     elem_ptr->is_set = 0;
     memset(elem_ptr->key, 0, KEY_SIZE);
@@ -107,7 +107,7 @@ void erehash(hashmapc* h)
     {
       hashmapc_element* el_ptr = elems_ptr + i;
 
-      el_ptr->val = malloc(stride);
+      el_ptr->val = calloc(1, stride);
 
       el_ptr->is_set = 0;
       memset(el_ptr->key, 0, KEY_SIZE);
@@ -213,6 +213,7 @@ void free_mem(hashmapc* h)
       {
         h->free_elem_func(elem_ptr->val);
       }
+			memset(elem_ptr->val, 0, h->stride);
       elem_ptr->val = NULL;
 
       elem_ptr->is_set = 0;
@@ -413,6 +414,7 @@ void hashmapc_delete(hashmapc* h, const char* key)
       {
         h->free_elem_func(el_ptr->val);
       }
+			memset(el_ptr->val, 0, h->stride);
       el_ptr->val = NULL;
       // reset is_set flag
       el_ptr->is_set = 0;
@@ -442,6 +444,7 @@ void hashmapc_delete(hashmapc* h, const char* key)
         {
           h->free_elem_func(el_ptr->val);
         }
+				memset(el_ptr->val, 0, h->stride);
         el_ptr->val = NULL;
         // reset is_set flag
         el_ptr->is_set = 0;
@@ -475,6 +478,7 @@ void hashmapc_clear(hashmapc* h)
       {
         h->free_elem_func(el_ptr->val);
       }
+			memset(el_ptr->val, 0, h->stride);
       el_ptr->val = NULL;
       // reset is_set flag
       el_ptr->is_set = 0;
