@@ -49,7 +49,7 @@ typedef struct
   /// function pointer for freeing individual element when delete, or clear
   /// from hashmap
 	/// put logic code of freeing internal in this function, not element itself***
-  void (*free_elem_func)(void* val);
+  void (*free_internals_elem_func)(void* val);
 } hashmapc;
 
 ///
@@ -105,13 +105,13 @@ extern void hashmapc_delete(hashmapc* h, const char* key);
 extern void hashmapc_clear(hashmapc* h);
 
 ///
-/// Set function to free element when hashmap deletes or clears it.
-/// This function accepts NULL, thus set free element function to empty and hashmap won't call it when deleting or clearing.
+/// Set function to free element's internals when hashmap deletes or clears it.
+/// This function accepts NULL, thus set free element-internals function to empty and hashmap won't call it when deleting or clearing.
 ///
 /// \param h hashmap
-/// \param func function pointer with signature of void (*func)(void*) in which void* is the opaque pointer
+/// \param func function pointer with signature of `void (*func)(void*)` in which void* is the opaque pointer
 ///             to the actual element's memory space.
 ///
-extern void hashmapc_set_free_elem_func(hashmapc* h, void (*func)(void*));
+extern void hashmapc_set_free_internals_elem_func(hashmapc* h, void (*func)(void*));
 
 #endif

@@ -206,15 +206,15 @@ void free_mem(hashmapc* h)
 
       // if need to call custom free element function as supplied by users
       // mostly for heap space, not stack space
-      //
-      // also need to check if such pointer is not null, as we pre-allocate memory space for hashmapc_element
-      // but its `val` pointer might be NULL
-      if (h->free_elem_func != NULL && elem_ptr->val != NULL)
+			// note: all `val` won't be NULL prior to this loop call
+      if (h->free_internals_elem_func != NULL)
       {
-        h->free_elem_func(elem_ptr->val);
+        h->free_internals_elem_func(elem_ptr->val);
       }
+			// set memory space to 0 for safety
 			memset(elem_ptr->val, 0, h->stride);
-      elem_ptr->val = NULL;
+			// set `val` to NULL, as we won't be using it anymore, only after re-create it
+			elem_ptr->val = NULL;
 
       elem_ptr->is_set = 0;
       memset(elem_ptr->key, 0, KEY_SIZE);
@@ -235,10 +235,6 @@ void free_mem_except_elems(hashmapc* h)
     for (int i=0; i<h->msize; ++i)
     {
       hashmapc_element* elem_ptr = h->mem + i;
-
-      // not free any memory space, just set it to NULL
-      // make sure we will do something about it later (be careful)
-      elem_ptr->val = NULL;
 
       elem_ptr->is_set = 0;
       memset(elem_ptr->key, 0, KEY_SIZE);
@@ -410,12 +406,14 @@ void hashmapc_delete(hashmapc* h, const char* key)
       memset(el_ptr->key, 0, KEY_SIZE);
       // if need to call custom free element function as supplied by users
       // mostly for heap space, not stack space
-      if (h->free_elem_func != NULL)
+			// note: all `val` won't be NULL prior to this call
+      if (h->free_internals_elem_func != NULL)
       {
-        h->free_elem_func(el_ptr->val);
+        h->free_internals_elem_func(el_ptr->val);
       }
+			// clear memory space
 			memset(el_ptr->val, 0, h->stride);
-      el_ptr->val = NULL;
+
       // reset is_set flag
       el_ptr->is_set = 0;
 
@@ -440,12 +438,13 @@ void hashmapc_delete(hashmapc* h, const char* key)
         memset(el_ptr->key, 0, KEY_SIZE);
         // if need to call custom free element function as supplied by users
         // mostly for heap space, not stack space
-        if (h->free_elem_func != NULL)
+				// note: all `val` won't be NULL prior to this call
+        if (h->free_internals_elem_func != NULL)
         {
-          h->free_elem_func(el_ptr->val);
+          h->free_internals_elem_func(el_ptr->val);
         }
 				memset(el_ptr->val, 0, h->stride);
-        el_ptr->val = NULL;
+
         // reset is_set flag
         el_ptr->is_set = 0;
 
@@ -474,12 +473,13 @@ void hashmapc_clear(hashmapc* h)
       memset(el_ptr->key, 0, KEY_SIZE);
       // if need to call custom free element function as supplied by users
       // mostly for heap space, not stack space
-      if (h->free_elem_func != NULL)
+			// note: all `val` won't be NULL
+      if (h->free_internals_elem_func != NULL)
       {
-        h->free_elem_func(el_ptr->val);
+        h->free_internals_elem_func(el_ptr->val);
       }
 			memset(el_ptr->val, 0, h->stride);
-      el_ptr->val = NULL;
+
       // reset is_set flag
       el_ptr->is_set = 0;
 
@@ -489,7 +489,7 @@ void hashmapc_clear(hashmapc* h)
   } 
 }
 
-void hashmapc_set_free_elem_func(hashmapc* h, void (*func)(void*))
+void hashmapc_set_free_internals_elem_func(hashmapc* h, void (*func)(void*))
 {
-  h->free_elem_func = func;
+  h->free_internals_elem_func = func;
 }
