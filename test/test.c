@@ -34,14 +34,15 @@ typedef struct
   char* s_val;
 } valst;
 
-static void free_elem(void* ptr)
+/// note: only free element's internals not itself
+/// as memory space is mananged by hashmapc
+static void free_internals_elem(void* ptr)
 {
   // convert from opaque poitner to our element pointer
   valst* v = (valst*)ptr;
 
   printf("free element (ft_val=%f, int_val=%d, s_val=%s)\n", v->ft_val, v->int_val, v->s_val);
   
-  // free heap variable
   free(v->s_val);
   v->s_val = NULL;
 }
@@ -73,7 +74,7 @@ int main (int argc, char** argv)
 
 	hashmapc* hm = hashmapc_new(sizeof(valst));
   // set our custom free-element function
-  hashmapc_set_free_elem_func(hm, free_elem);
+  hashmapc_set_free_internals_elem_func(hm, free_internals_elem);
 
 	// add initial 16 elements
 	HM_INSERT(hm, "key1", v, 1.0f, 1, "val1")
