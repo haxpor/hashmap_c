@@ -4,10 +4,13 @@ Hashmap with [MurmurHash3](https://github.com/aappleby/smhasher) (specifically `
 
 # Build
 
-* `make` - to build the library as object files and test program. Result `.obj` and `hashmapc_test` will be produced at `build/` directory.
-* `make lib` - to build a static library `libhashmapc.a` will be produced at `build/` directory.
-* `make test` - to build test program
-* `make clean` - to clean generated files
+Based on autotools.
+
+* `./autogen.sh`
+* `./configure`
+* `make`
+* (optional) `make check`
+* `make install`
 
 # Compile Flags
 

@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include "hashmap_c.h"
+#include "hashmap_c/hashmap_c.h"
 
 #define PRINT_INFO(h) print_info(h);
 
