@@ -1,11 +1,11 @@
-#include "hashmap_c.h"
+#include "hashmap_c/hashmap_c.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
 #include <stdint.h>
 #include <string.h>
 #include <math.h>
-#include "MurmurHash3.h"
+#include "MurmurHash3/MurmurHash3.h"
 
 /// when the number of values added into itself
 /// exceed LOAD_FACTOR of current number of values element added
