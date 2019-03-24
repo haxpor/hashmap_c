@@ -23,3 +23,5 @@ test_tests_SOURCES = test/test.c
 test_tests_CFLAGS = -I./include -I./externals/MurmurHash3/include
 test_tests_LDFLAGS = -lm \
 										 -lhashmap_c
+
+EXTRA_DIST = README.md LICENSE autogen.sh
