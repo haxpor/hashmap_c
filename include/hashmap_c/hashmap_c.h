@@ -1,6 +1,10 @@
 #ifndef HASHMAP_C_H_
 #define HASHMAP_C_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 ///
 /// Hashmap with string as key
 ///
@@ -113,5 +117,9 @@ extern void hashmapc_clear(hashmapc* h);
 ///             to the actual element's memory space.
 ///
 extern void hashmapc_set_free_internals_elem_func(hashmapc* h, void (*func)(void*));
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
