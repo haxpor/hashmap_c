@@ -12,6 +12,18 @@ Based on autotools.
 * (optional) `make check`
 * `make install`
 
+## ndk-build suport for Android
+
+This project has support for building library for Android.
+
+It has `Android.mk` file at the root directory of this project. You can use the following command for example
+
+```
+ndk-build NDK_PROJECT_PATH=null NDK_OUT=build/objs NDK_LIBS_OUT=build/libs APP_BUILD_SCRIPT=Android.mk APP_PLATFORM=android-18 APP_MODULES="hashmap_c hashmap_c_static" NDK_DEBUG=1
+```
+
+That will generate obj and library (shared and static one) files at build/objs and build/libs (static library is at build/objs/local for minimum sdk support of api level 18 with debugging symbols also generated. `APP_MODULES` tells to build for both shared and static library.
+
 # Compile Flags
 
 If you want to see more debugging log as spit out from hashmap itself, use `make CFLAGS=-DHASHMAPC_DEBUG`. This will make it prints out debugging log whenever we call its function.
