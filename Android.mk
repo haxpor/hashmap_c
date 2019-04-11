@@ -13,8 +13,7 @@ LOCAL_MODULE := hashmap_c
 LOCAL_C_INCLUDES := $(LOCAL_PATH)/include \
 	externals/MurmurHash3/include
 
-LOCAL_EXPORT_C_INCLUDES := $(LOCAL_C_INCLUDES) \
-	externals/MurmurHash3/include
+LOCAL_EXPORT_C_INCLUDES := $(LOCAL_C_INCLUDES)
 
 LOCAL_SRC_FILES := src/hashmap_c.c \
 	externals/MurmurHash3/src/MurmurHash3.c
