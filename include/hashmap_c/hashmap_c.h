@@ -8,7 +8,7 @@ extern "C" {
 ///
 /// Hashmap with string as key
 ///
-/// Its internal imeplementation will pre-allocate elements then insertion operation will
+/// Its internal implementation will pre-allocate elements then insertion operation will
 /// just do a memory copy from source to destination, no more allocation except whenever
 /// it needs to expand its memory space.
 ///
@@ -77,8 +77,8 @@ extern void hashmapc_free(hashmapc* h);
 /// `val` needs to have the same size as hashmap's stride.
 ///
 /// \param h hashmap
-/// \param key pointer to null-terminated string. Accept up to 32 characters. If it's longer than that, it will cut
-///            only take 32 characters in length.
+/// \param key pointer to null-terminated string. Accept up to 32 characters, exceeded
+///        characters will be cut out.
 /// \param val value to be added at key, it need to have the same size as of hashmap's stride
 ///
 extern void hashmapc_insert(hashmapc* h, const char* key, void* val);
@@ -88,15 +88,15 @@ extern void hashmapc_insert(hashmapc* h, const char* key, void* val);
 ///
 /// \param h hashmap
 /// \param key key to try to search and get associated value from
-/// \return opaque pointer to found value, otherwise if not found, then NULL will be returned.
+/// \return opaque pointer to found value, otherwise return NULL.
 ///
 extern const void* hashmapc_get(hashmapc* h, const char* key);
 
 ///
-/// Delete item frm `key`.
+/// Delete item from `key`.
 ///
 /// \param h hashmap
-/// \param key key associated with item which will be delete
+/// \param key key associated with item which will be deleted
 ///
 extern void hashmapc_delete(hashmapc* h, const char* key);
 
