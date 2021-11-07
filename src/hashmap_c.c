@@ -65,431 +65,436 @@ static void free_mem_except_elems(hashmapc* h);
 
 void init_defaults(hashmapc* h, unsigned int stride)
 {
-  h->stride = stride;
-  h->size = 0;
-  h->msize = INITIAL_ALLOC;
+	h->stride = stride;
+	h->size = 0;
+	h->msize = INITIAL_ALLOC;
 
-  // set seed to random, we gonna set seed for hashmap
-  srand(time(NULL));
-  h->seed = rand() % (uint32_t)(pow(2,32) - 1);
+	// set seed to random, we gonna set seed for hashmap
+	srand(time(NULL));
+	h->seed = rand() % (uint32_t)(pow(2,32) - 1);
 
-  // allocate memory for its element wrapper, and actual backing memory space
-  h->mem = malloc(sizeof(hashmapc_element) * INITIAL_ALLOC);
-  for (int i=0; i<h->msize; ++i)
-  {
-    hashmapc_element* elem_ptr = h->mem + i;
-    elem_ptr->val = calloc(1, h->stride);
+	// allocate memory for its element wrapper, and actual backing memory space
+	h->mem = malloc(sizeof(hashmapc_element) * INITIAL_ALLOC);
+	for (int i=0; i<h->msize; ++i)
+	{
+		hashmapc_element* elem_ptr = h->mem + i;
+		elem_ptr->val = calloc(1, h->stride);
 
-    elem_ptr->is_set = 0;
-    memset(elem_ptr->key, 0, KEY_SIZE);
-  }
+		elem_ptr->is_set = 0;
+		memset(elem_ptr->key, 0, KEY_SIZE);
+	}
 }
 
 void erehash(hashmapc* h)
 {
-  // this will require around double of memory usage
-  // as it needs to make a copy of current hashmap of N items then double it
-  // technically it could be N/2 + N; former and new one
+	// this will require around double of memory usage
+	// as it needs to make a copy of current hashmap of N items then double it
+	// technically it could be N/2 + N; former and new one
 
-  // calculate new size
-  unsigned int new_size = h->msize << 1;
+	// calculate new size
+	unsigned int new_size = h->msize << 1;
 
-  // double the current size or just shift 1-bit to the left
-  // hold into a new pointer, we swap it when we finish rehash all items
-  hashmapc_element* elems_ptr = malloc(sizeof(hashmapc_element) * new_size);
-  // should we do more on error handling here?
-  if (elems_ptr != NULL)
-  {
-    unsigned int stride = h->stride;
+	// double the current size or just shift 1-bit to the left
+	// hold into a new pointer, we swap it when we finish rehash all items
+	hashmapc_element* elems_ptr = malloc(sizeof(hashmapc_element) * new_size);
+	// should we do more on error handling here?
+	if (elems_ptr != NULL)
+	{
+		unsigned int stride = h->stride;
 
-    // allocate space for newly expanded elements
-    for (int i=0; i<new_size; ++i)
-    {
-      hashmapc_element* el_ptr = elems_ptr + i;
+		// allocate space for newly expanded elements
+		for (int i=0; i<new_size; ++i)
+		{
+			hashmapc_element* el_ptr = elems_ptr + i;
 
-      el_ptr->val = calloc(1, stride);
+			el_ptr->val = calloc(1, stride);
 
-      el_ptr->is_set = 0;
-      memset(el_ptr->key, 0, KEY_SIZE);
-    }
+			el_ptr->is_set = 0;
+			memset(el_ptr->key, 0, KEY_SIZE);
+		}
 
-    // rehash old item then set into new mem
-    for (int i=0; i<h->msize; ++i)
-    {
-      // get hold of old element
-      hashmapc_element* oldel_ptr = h->mem + i;
-      // if it's not set yet (or empty), then skip
-      if (oldel_ptr->is_set == 0)
-        continue;
+		// rehash old item then set into new mem
+		for (int i=0; i<h->msize; ++i)
+		{
+			// get hold of old element
+			hashmapc_element* oldel_ptr = h->mem + i;
+			// if it's not set yet (or empty), then skip
+			if (oldel_ptr->is_set == 0)
+				continue;
 
-      // calculate new hash value for index to be put into new mem pointer
-      // tehnical note about murmurhash3, see hashmapc_insert() function
-      uint32_t out;
-      // cap key length to KEY_SIZE
-      size_t key_len = strlen(oldel_ptr->key) > KEY_SIZE ? KEY_SIZE : strlen(oldel_ptr->key);
-      // use length of null-terminated string as the size
-      MurmurHash3_x86_32(oldel_ptr->key, key_len, h->seed, &out);
+			// calculate new hash value for index to be put into new mem pointer
+			// tehnical note about murmurhash3, see hashmapc_insert() function
+			uint32_t out;
+			// cap key length to KEY_SIZE
+			size_t key_len = strlen(oldel_ptr->key) > KEY_SIZE ? KEY_SIZE : strlen(oldel_ptr->key);
+			// use length of null-terminated string as the size
+			MurmurHash3_x86_32(oldel_ptr->key, key_len, h->seed, &out);
 
-      // use new size of hashmap now for new element
-      unsigned int hindex = out & (new_size - 1);
-
-#ifdef HASHMAPC_DEBUG
-      printf("[REHASH] hash index: %d\n", hindex);
-#endif
-
-      // get hold of new element
-      hashmapc_element* newel_ptr = elems_ptr + hindex;
-
-      // if not set yet, then proceed to directly set
-      if (newel_ptr->is_set == 0)
-      {
-        // deep copy from old value into new one
-        memcpy(newel_ptr->val, oldel_ptr->val, h->stride);
-        // mark as set for this element
-        newel_ptr->is_set = 1;
-        // deep copy of old key into new one
-        memcpy(newel_ptr->key, oldel_ptr->key, KEY_SIZE);
-      }
-      // otherwise, we need to iterate to find an empty slot to set via linear probing
-      else
-      {
-        for (int i=1; i<new_size; ++i)
-        {
-          int ii = (i + hindex) % new_size;
-
-          // get hold of new element
-          hashmapc_element* newel_ptr = elems_ptr + ii;
-
-          if (newel_ptr->is_set == 0)
-          {
-            // deep copy from old value into new one
-            memcpy(newel_ptr->val, oldel_ptr->val, h->stride);
-            // mark as set for this element
-            newel_ptr->is_set = 1;
-            // deep copy of old key into new one
-            strncpy(newel_ptr->key, oldel_ptr->key, KEY_SIZE);
+			// use new size of hashmap now for new element
+			unsigned int hindex = out & (new_size - 1);
 
 #ifdef HASHMAPC_DEBUG
-            printf("[REHASH] collision found (new index %d, loop %d)\n", ii, i);
+			printf("[REHASH] hash index: %d\n", hindex);
 #endif
-            break;
-          }
-        }
-      }
-    }
 
-    // free old mem pointer except elements' memory space
-    // note: call this first before updating its new size
-    free_mem_except_elems(h);
+			// get hold of new element
+			hashmapc_element* newel_ptr = elems_ptr + hindex;
 
-    // update new msize
-    h->msize = new_size;
+			// if not set yet, then proceed to directly set
+			if (newel_ptr->is_set == 0)
+			{
+				// deep copy from old value into new one
+				memcpy(newel_ptr->val, oldel_ptr->val, h->stride);
+				// mark as set for this element
+				newel_ptr->is_set = 1;
+				// deep copy of old key into new one
+				memcpy(newel_ptr->key, oldel_ptr->key, KEY_SIZE);
+			}
+			// otherwise, we need to iterate to find an empty slot to set via linear probing
+			else
+			{
+				for (int i=1; i<new_size; ++i)
+				{
+					int ii = (i + hindex) % new_size;
 
-    // swap the mem pointer
-    h->mem = elems_ptr;
+					// get hold of new element
+					hashmapc_element* newel_ptr = elems_ptr + ii;
+
+					if (newel_ptr->is_set == 0)
+					{
+						// deep copy from old value into new one
+						memcpy(newel_ptr->val, oldel_ptr->val, h->stride);
+						// mark as set for this element
+						newel_ptr->is_set = 1;
+						// deep copy of old key into new one
+						strncpy(newel_ptr->key, oldel_ptr->key, KEY_SIZE);
 
 #ifdef HASHMAPC_DEBUG
-    printf("[REHASH] Done rehashing\n");
+						printf("[REHASH] collision found (new index %d, loop %d)\n", ii, i);
 #endif
-  }
+						break;
+					}
+				}
+			}
+		}
+
+		// free old mem pointer except elements' memory space
+		// note: call this first before updating its new size
+		free_mem_except_elems(h);
+
+		// update new msize
+		h->msize = new_size;
+
+		// swap the mem pointer
+		h->mem = elems_ptr;
+
+#ifdef HASHMAPC_DEBUG
+		printf("[REHASH] Done rehashing\n");
+#endif
+	}
 }
 
 void free_mem(hashmapc* h)
 {
-  // free its memory space
-  if (h->mem != NULL)
-  {
-    // free its backing memory space first
-    for (int i=0; i<h->msize; ++i)
-    {
-      hashmapc_element* elem_ptr = h->mem + i;
+	// free its memory space
+	if (h->mem != NULL)
+	{
+		// free its backing memory space first
+		for (int i=0; i<h->msize; ++i)
+		{
+			hashmapc_element* elem_ptr = h->mem + i;
 
-      // if need to call custom free element function as supplied by users
-      // mostly for heap space, not stack space
+			// if need to call custom free element function as supplied by users
+			// mostly for heap space, not stack space
 			// note: all `val` won't be NULL prior to this loop call
-      if (h->free_internals_elem_func != NULL)
-      {
-        h->free_internals_elem_func(elem_ptr->val);
-      }
+			if (h->free_internals_elem_func != NULL)
+			{
+				h->free_internals_elem_func(elem_ptr->val);
+			}
 			// set memory space to 0 for safety
 			memset(elem_ptr->val, 0, h->stride);
 			// set `val` to NULL, as we won't be using it anymore, only after re-create it
 			elem_ptr->val = NULL;
 
-      elem_ptr->is_set = 0;
-      memset(elem_ptr->key, 0, KEY_SIZE);
-    }
+			elem_ptr->is_set = 0;
+			memset(elem_ptr->key, 0, KEY_SIZE);
+		}
 
-    // now free itself
-    free(h->mem);
-    h->mem = NULL;
-  }
+		// now free itself
+		free(h->mem);
+		h->mem = NULL;
+	}
 }
 
 void free_mem_except_elems(hashmapc* h)
 {
-  // free its memory space
-  if (h->mem != NULL)
-  {
-    // free its backing memory space first
-    for (int i=0; i<h->msize; ++i)
-    {
-      hashmapc_element* elem_ptr = h->mem + i;
+	// free its memory space
+	if (h->mem != NULL)
+	{
+		// free its backing memory space first
+		for (int i=0; i<h->msize; ++i)
+		{
+			hashmapc_element* elem_ptr = h->mem + i;
 
-      elem_ptr->is_set = 0;
-      memset(elem_ptr->key, 0, KEY_SIZE);
-    }
+			elem_ptr->is_set = 0;
+			memset(elem_ptr->key, 0, KEY_SIZE);
+		}
 
-    // now free itself
-    free(h->mem);
-    h->mem = NULL;
-  }
+		// now free itself
+		free(h->mem);
+		h->mem = NULL;
+	}
 }
 
 hashmapc* hashmapc_new(unsigned int stride)
 {
 
-  hashmapc* out = malloc(sizeof(hashmapc));
+	hashmapc* out = malloc(sizeof(hashmapc));
 
-  // init defaults
-  init_defaults(out, stride);
-  
-  return out;
+	// init defaults
+	init_defaults(out, stride);
+
+	return out;
 }
 
 void hashmapc_free(hashmapc* h)
 {
-  // free mem
-  free_mem(h);
+	// free mem
+	free_mem(h);
 
-  h->size = 0;
-  h->msize = 0;
-  h->stride = 0;
+	h->size = 0;
+	h->msize = 0;
+	h->stride = 0;
 
-  // free itself
-  free(h);
+	// free itself
+	free(h);
 }
 
 void hashmapc_insert(hashmapc* h, const char* key, void* val)
 {
-  // check to expand memory space
-  if (h->size * 1.0f >= h->msize * 1.0f * LOAD_FACTOR)
-  {
+	// check to expand memory space
+	if (h->size * 1.0f >= h->msize * 1.0f * LOAD_FACTOR)
+	{
 #ifdef HASHMAPC_DEBUG
-    printf("exceeded LOAD_FACTOR, expand memory space\n");
+		printf("exceeded LOAD_FACTOR, expand memory space\n");
 #endif
-    // we need to rehash all elements
-    // as hashing function on new hashmap's new size will result in different index
-    erehash(h);
-  }
+		// we need to rehash all elements
+		// as hashing function on new hashmap's new size will result in different index
+		erehash(h);
+	}
 
-  // if there's still enough mem space to add more element
-  if (h->size < h->msize)
-  {
-    // compute hash of input key
-    // note: choose x86_32 variant as it's suitable for low latency hash table look up
-    // see reference at https://github.com/aappleby/smhasher/wiki/MurmurHash3
-    uint32_t out;
-    // cap key length to KEY_SIZE
-    size_t key_len = strlen(key) > KEY_SIZE ? KEY_SIZE : strlen(key);
-    // use length of null-terminated string as the size
-    MurmurHash3_x86_32(key, key_len, h->seed, &out);
+	// if there's still enough mem space to add more element
+	if (h->size < h->msize)
+	{
+		// compute hash of input key
+		// note: choose x86_32 variant as it's suitable for low latency hash table look up
+		// see reference at https://github.com/aappleby/smhasher/wiki/MurmurHash3
+		uint32_t out;
+		// cap key length to KEY_SIZE
+		size_t key_len = strlen(key) > KEY_SIZE ? KEY_SIZE : strlen(key);
+		// use length of null-terminated string as the size
+		MurmurHash3_x86_32(key, key_len, h->seed, &out);
 
-    unsigned int index = out & (h->msize - 1);
-
-#ifdef HASHMAPC_DEBUG
-    printf("[INSERT] hash index: %d\n", index);
-#endif
-
-    // get hold of such element
-    hashmapc_element* elem_ptr = h->mem + index;
-
-    // if not set yet, then proceed to directly set
-    if (elem_ptr->is_set == 0)
-    {
-      // make a deep copy from input `val` to our backing memory space
-      memcpy(elem_ptr->val, val, h->stride);
-      // mark as set for this element
-      elem_ptr->is_set = 1;
-      // copy key to element's key (remainder of destination string will be filled with '\0'
-      strncpy(elem_ptr->key, key, key_len);
-
-      // update hashmap's size
-      h->size++;
-    }
-    // otherwise, we need to iterate to find an empty slot to set via linear probing
-    else
-    {
-      for (int i=1; i<h->msize; ++i)
-      {
-        int ii = (i + index) % h->msize;
-        hashmapc_element* elem_ptr = h->mem + ii;
-        if (elem_ptr->is_set == 0)
-        {
-          // make a deep copy from input `val` to our backing memory space
-          memcpy(elem_ptr->val, val, h->stride);
-          // mark as set for this element
-          elem_ptr->is_set = 1;
-          // copy key to element's key (remainder of destination string will be filled with '\0'
-          strncpy(elem_ptr->key, key, key_len);
+		unsigned int index = out & (h->msize - 1);
 
 #ifdef HASHMAPC_DEBUG
-          printf("[INSERT] collision found (new index %d, loop %d)\n", ii, i);
+		printf("[INSERT] hash index: %d\n", index);
 #endif
-          // update hashmap's size
-          h->size++;
-          break;
-        }
-      }
-    }
-  }
+
+		// get hold of such element
+		hashmapc_element* elem_ptr = h->mem + index;
+
+		// if not set yet, then proceed to directly set
+		if (elem_ptr->is_set == 0)
+		{
+			// make a deep copy from input `val` to our backing memory space
+			memcpy(elem_ptr->val, val, h->stride);
+			// mark as set for this element
+			elem_ptr->is_set = 1;
+			// copy key to element's key (remainder of destination string will be filled with '\0'
+			strncpy(elem_ptr->key, key, key_len);
+
+			// update hashmap's size
+			h->size++;
+		}
+		// otherwise, we need to iterate to find an empty slot to set via linear probing
+		else
+		{
+			for (int i=1; i<h->msize; ++i)
+			{
+				int ii = (i + index) % h->msize;
+				hashmapc_element* elem_ptr = h->mem + ii;
+				if (elem_ptr->is_set == 0)
+				{
+					// make a deep copy from input `val` to our backing memory space
+					memcpy(elem_ptr->val, val, h->stride);
+					// mark as set for this element
+					elem_ptr->is_set = 1;
+					// copy key to element's key (remainder of destination string will be filled with '\0'
+					strncpy(elem_ptr->key, key, key_len);
+
+#ifdef HASHMAPC_DEBUG
+					printf("[INSERT] collision found (new index %d, loop %d)\n", ii, i);
+#endif
+					// update hashmap's size
+					h->size++;
+					break;
+				}
+			}
+		}
+	}
 }
 
 const void* hashmapc_get(hashmapc* h, const char* key)
 {
-  // hold output from hashing
-  uint32_t out;
-  // only support up to KEY_SIZE from key
-  size_t key_len = strlen(key) > KEY_SIZE ? KEY_SIZE : strlen(key);
-  // hash to get index
-  MurmurHash3_x86_32(key, key_len, h->seed, &out);
-  unsigned int index = out & (h->msize - 1);
+	// hold output from hashing
+	uint32_t out;
+	// only support up to KEY_SIZE from key
+	size_t key_len = strlen(key) > KEY_SIZE ? KEY_SIZE : strlen(key);
+	// hash to get index
+	MurmurHash3_x86_32(key, key_len, h->seed, &out);
+	unsigned int index = out & (h->msize - 1);
 
-  // get element from hashed index
-  hashmapc_element* el_ptr = h->mem + index;
-  // check if hashed index has element with key we aim for
-  if (el_ptr->is_set == 1)
-  {
-    // if found, return now
-    if (strncmp(el_ptr->key, key, strlen(key)) == 0)
-    {
-      return (const void*)el_ptr->val;
-    }
-  }
+	// get element from hashed index
+	hashmapc_element* el_ptr = h->mem + index;
+	// check if hashed index has element with key we aim for
+	if (el_ptr->is_set == 1)
+	{
+		// if found, return now
+		if (strncmp(el_ptr->key, key, key_len) == 0)
+			return (const void*)el_ptr->val;
+	}
 
-  // linear finding
-  // there's chance that such element is saved in different index than hashed index
-  for (int i=1; i<h->msize; ++i)
-  {
-    int ii = (i + index) % h->msize;
-    hashmapc_element* el_ptr = h->mem + ii;   
-    if (el_ptr->is_set == 1 && strncmp(el_ptr->key, key, strlen(key)) == 0)
-    {
+	// linear finding
+	// there's chance that such element is saved in different index than hashed index
+	for (int i=1; i<h->msize; ++i)
+	{
+		int ii = (i + index) % h->msize;
+		hashmapc_element* el_ptr = h->mem + ii;   
+
+		if (el_ptr->is_set == 1)
+		{
+			// early continue as length of keys are not the same
+			// NOTE: for the case of like "key1" and "key10", length will prevent
+			// false-positive test result
+			if (strlen(key) != strlen(el_ptr->key))
+				continue;
+
+			if (strncmp(el_ptr->key, key, key_len) == 0)
+			{
 #ifdef HASHMAPC_DEBUG
-      printf("[GET] Linear searching and found\n");
+				printf("[GET] Linear searching and found, key=%s (el_ptr->key=%s)\n", key, el_ptr->key);
 #endif
-      return (const void*)el_ptr->val;
-    }
-  }
+				return (const void*)el_ptr->val;
+			}
+		}
+	}
 
-  return NULL;
+	return NULL;
 }
 
 void hashmapc_delete(hashmapc* h, const char* key)
 {
-  // hold output from hashing
-  uint32_t out;
-  // only support up to KEY_SIZE from key
-  size_t key_len = strlen(key) > KEY_SIZE ? KEY_SIZE : strlen(key);
-  // hash to get index
-  MurmurHash3_x86_32(key, key_len, h->seed, &out);
-  unsigned int index = out & (h->msize - 1);
+	// hold output from hashing
+	uint32_t out;
+	// only support up to KEY_SIZE from key
+	size_t key_len = strlen(key) > KEY_SIZE ? KEY_SIZE : strlen(key);
+	// hash to get index
+	MurmurHash3_x86_32(key, key_len, h->seed, &out);
+	unsigned int index = out & (h->msize - 1);
 
-  // get element from hashed index
-  hashmapc_element* el_ptr = h->mem + index;
-  // found if it's set, then we remove it
-  if (el_ptr->is_set == 1)
-  {
-    if (strncmp(el_ptr->key, key, strlen(key)) == 0)
-    {
-      // clear memory space for this item
-      memset(el_ptr->key, 0, KEY_SIZE);
-      // if need to call custom free element function as supplied by users
-      // mostly for heap space, not stack space
+	// get element from hashed index
+	hashmapc_element* el_ptr = h->mem + index;
+	// found if it's set, then we remove it
+	if (el_ptr->is_set == 1)
+	{
+		if (strncmp(el_ptr->key, key, strlen(key)) == 0)
+		{
+			// clear memory space for this item
+			memset(el_ptr->key, 0, KEY_SIZE);
+			// if need to call custom free element function as supplied by users
+			// mostly for heap space, not stack space
 			// note: all `val` won't be NULL prior to this call
-      if (h->free_internals_elem_func != NULL)
-      {
-        h->free_internals_elem_func(el_ptr->val);
-      }
+			if (h->free_internals_elem_func != NULL)
+			{
+				h->free_internals_elem_func(el_ptr->val);
+			}
 			// clear memory space
 			memset(el_ptr->val, 0, h->stride);
 
-      // reset is_set flag
-      el_ptr->is_set = 0;
+			// reset is_set flag
+			el_ptr->is_set = 0;
 
-      // update current size
-      h->size--;
+			// update current size
+			h->size--;
 
 #ifdef HASHMAPC_DEBUG
-      printf("[DELETE] removed item at index %d\n", index);
+			printf("[DELETE] removed item at index %d, size=%d\n", index, h->size);
 #endif
-    }
-  }
-  // linearly find the target
-  else
-  {
-    for (int i=1; i<h->msize; ++i)
-    {
-      int ii = (i + index) % h->msize;
-      hashmapc_element* el_ptr = h->mem + ii;   
-      if (el_ptr->is_set == 1 && strncmp(el_ptr->key, key, strlen(key)) == 0)
-      {
-        // clear memory space for this item
-        memset(el_ptr->key, 0, KEY_SIZE);
-        // if need to call custom free element function as supplied by users
-        // mostly for heap space, not stack space
-				// note: all `val` won't be NULL prior to this call
-        if (h->free_internals_elem_func != NULL)
-        {
-          h->free_internals_elem_func(el_ptr->val);
-        }
-				memset(el_ptr->val, 0, h->stride);
+			return;
+		}
+	}
+	// linearly find the target
+	for (int i=1; i<h->msize; ++i)
+	{
+		int ii = (i + index) % h->msize;
+		hashmapc_element* el_ptr = h->mem + ii;   
+		if (el_ptr->is_set == 1 && strncmp(el_ptr->key, key, strlen(key)) == 0)
+		{
+			// clear memory space for this item
+			memset(el_ptr->key, 0, KEY_SIZE);
+			// if need to call custom free element function as supplied by users
+			// mostly for heap space, not stack space
+			// note: all `val` won't be NULL prior to this call
+			if (h->free_internals_elem_func != NULL)
+				h->free_internals_elem_func(el_ptr->val);
 
-        // reset is_set flag
-        el_ptr->is_set = 0;
+			memset(el_ptr->val, 0, h->stride);
 
-        // update current size
-        h->size--;
+			// reset is_set flag
+			el_ptr->is_set = 0;
+
+			// update current size
+			h->size--;
 #ifdef HASHMAPC_DEBUG
-        printf("[DELETE] Linear searching to delete (loops %d)\n", i);
+			printf("[DELETE] Linear searching to delete (loops %d), size=%d\n", i, h->size);
 #endif
-        return;
-      }
-    }
+			return;
+		}
+	}
 #ifdef HASHMAPC_DEBUG
-    printf("[DELETE] cannot find item (loops %d)\n", h->msize-1);
+	printf("[DELETE] cannot find item (loops %d)\n", h->msize-1);
 #endif
-  }
 }
 
 void hashmapc_clear(hashmapc* h)
 {
-  for (int i=0; i<h->msize; ++i)
-  {
-    hashmapc_element* el_ptr = h->mem + i;
-    if (el_ptr->is_set == 1)
-    {
-      // clear memory space for this item
-      memset(el_ptr->key, 0, KEY_SIZE);
-      // if need to call custom free element function as supplied by users
-      // mostly for heap space, not stack space
+	for (int i=0; i<h->msize; ++i)
+	{
+		hashmapc_element* el_ptr = h->mem + i;
+		if (el_ptr->is_set == 1)
+		{
+			// clear memory space for this item
+			memset(el_ptr->key, 0, KEY_SIZE);
+			// if need to call custom free element function as supplied by users
+			// mostly for heap space, not stack space
 			// note: all `val` won't be NULL
-      if (h->free_internals_elem_func != NULL)
-      {
-        h->free_internals_elem_func(el_ptr->val);
-      }
+			if (h->free_internals_elem_func != NULL)
+			{
+				h->free_internals_elem_func(el_ptr->val);
+			}
 			memset(el_ptr->val, 0, h->stride);
 
-      // reset is_set flag
-      el_ptr->is_set = 0;
+			// reset is_set flag
+			el_ptr->is_set = 0;
 
-      // update current size
-      h->size--;
-    }
-  } 
+			// update current size
+			h->size--;
+		}
+	} 
 }
 
 void hashmapc_set_free_internals_elem_func(hashmapc* h, void (*func)(void*))
 {
-  h->free_internals_elem_func = func;
+	h->free_internals_elem_func = func;
 }
