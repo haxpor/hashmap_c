@@ -1,8 +1,12 @@
 ACLOCAL_AMFLAGS = -I m4
+# for no I/O redirections, so we can printf
+# uncomment: the following line to run test without I/O redirections, mostly
+# in case of needing to see some printed-out text
+AUTOMAKE_OPTIONS = serial-tests
 
 lib_LTLIBRARIES = libhashmap_c.la
 libhashmap_c_la_CFLAGS = @MAIN_PROGRAM_CFLAGS@
-libhashmap_c_la_LDFLAGS = @MAIN_PROGRAM_LDFLAGS@
+libhashmap_c_la_LDFLAGS = @MAIN_PROGRAM_LDFLAGS@ -version-info 1:0:0
 libhashmap_c_la_SOURCES = src/hashmap_c.c \
 						  externals/MurmurHash3/src/MurmurHash3.c
 

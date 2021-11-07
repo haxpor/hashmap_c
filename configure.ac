@@ -1,5 +1,5 @@
 AC_PREREQ([2.69])
-AC_INIT([hashmap_c], [0.1], [haxpor@gmail.com])
+AC_INIT([hashmap_c], [1.0.0], [haxpor@gmail.com])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign subdir-objects])
 
 AC_CONFIG_MACRO_DIR([m4])
@@ -50,11 +50,11 @@ AC_ARG_ENABLE([release], [AS_HELP_STRING([--enable-release], [configure a releas
 
 if test x$BUILD_RELEASE = xtrue; then
 	MAIN_PROGRAM_CFLAGS="-std=c99 -O2 -pedantic -Wall -Wextra -I./include -I./externals/MurmurHash3/include"
-	MAIN_PROGRAM_LDFLAGS="-no-undefined -version-info 0:1:0"
+	MAIN_PROGRAM_LDFLAGS="-no-undefined"
 	TEST_PROGRAM_CFLAGS="-std=c99 -O2 -pedantic -Wall -Wextra -I./include -I./externals/MurmurHash3/include"
 else
 	MAIN_PROGRAM_CFLAGS="-std=c99 -g -O2 -pedantic -Wall -Wextra -I./include -I./externals/MurmurHash3/include"
-	MAIN_PROGRAM_LDFLAGS="-no-undefined -version-info 0:1:0"
+	MAIN_PROGRAM_LDFLAGS="-no-undefined"
 	TEST_PROGRAM_CFLAGS="-std=c99 -g -O2 -pedantic -Wall -Wextra -I./include -I./externals/MurmurHash3/include"
 fi
 
